@@ -125,16 +125,65 @@ if uploaded_file is not None:
 
     st.dataframe(most_common_df)
     emoji_df=helper.emoji_helper(selected_user,df)
+    
     st.title("Emojis Analysis")
     col1,col2=st.columns(2)
     with col1:
-        st.dataframe(emoji_df.head())
+        if emoji_df.empty:
+            st.write("No emojis found in the messages.")
+        else:
+                
+            st.dataframe(emoji_df.head())
 
     with col2:
-        st.subheader("Top 5 Emojis")
-        fig,ax=plt.subplots()
-        ax.pie(emoji_df['count'].head(),labels=emoji_df['emoji'].head(),autopct="%0.2f")
-        st.pyplot(fig)
-         
+        if emoji_df.empty:
+            st.write("No emojis found to display in the pie chart.")
+        else:
+                
+            st.subheader("Top 5 Emojis")
+            fig,ax=plt.subplots()
+            ax.pie(emoji_df['count'].head(),labels=emoji_df['emoji'].head(),autopct="%0.2f")
+            st.pyplot(fig)
+            
+        
+    #sentiment analysis and communication grade    
+    st.title("Sentiment Analysis")
+    st.header("the sentiment analysis provides insights into the emotional tone of the messages, categorizing them as positive, negative, or neutral. This helps to understand the overall mood and sentiment of the communication within the chat.")
+    
+    sentiment_df = helper.sentiment_analysis(selected_user, df)
+    positive = (sentiment_df['sentiment'] > 0).sum()
+    negative = (sentiment_df['sentiment'] < 0).sum()
+    neutral = (sentiment_df['sentiment'] == 0).sum()
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        
+        st.metric("Positive", positive)
+    with col2:
+        st.metric("Negative", negative)
+    with col3:
+        st.metric("Neutral", neutral)       
 
 
+    st.title("AI Commuication Score")
+    st.subheader("The communication grade provides an overall assessment of the user's communication style based on their message content and sentiment. It categorizes users into different grades (e.g., A+, A, B, C, D) to indicate their level of engagement and positivity in the chat.")  
+    grade, final_score = helper.communication_grade(selected_user, df)
+    col1, col2 = st.columns(2)
+
+    with col1:
+        
+        st.metric("Communication Grade", grade)
+
+    with col2:
+        st.metric("AI Score", final_score)
+
+    if grade == "A+":
+        
+        st.success("Very positive and highly engaging communicator")
+    elif grade == "A":
+        st.success("Friendly and active communicator")
+    elif grade == "B":
+        st.info("Balanced communication style")
+    elif grade == "C":
+        st.warning("Less interactive communicator")
+    else:
+        st.error("Low engagement detected")
