@@ -5,12 +5,29 @@ import pandas as pd
 
 def preprocess(data):
 
-   pattern='\d{1,2}/\d{1,2}/\d{2,4},\s\d{1,2}:\d{2}\s-\s'
+   pattern = r'\[?\d{1,2}[/-]\d{1,2}[/-]\d{2,4},\s\d{1,2}:\d{2}(?::\d{2})?\s?(?:am|pm|AM|PM)?\]?\s?[-–]\s'
    message=re.split(pattern,data)[1:]
    dates=re.findall(pattern , data)
    df=pd.DataFrame({'user_message':message,'message_date':dates})
    #converting the message date type
-   df['message_date']=pd.to_datetime(df['message_date'],format='%m/%d/%y, %H:%M - ')
+   
+   def parse_date(date_str):
+    date_str = re.sub(r'[\[\]]', '', date_str).strip().rstrip('-').strip()
+    for fmt in (
+        '%m/%d/%y, %H:%M',
+        '%d/%m/%y, %H:%M',
+        '%m/%d/%Y, %H:%M',
+        '%d/%m/%Y, %H:%M',
+        '%m/%d/%y, %I:%M %p',
+        '%d/%m/%y, %I:%M %p',
+    ):
+        try:
+            return pd.to_datetime(date_str, format=fmt)
+        except ValueError:
+            continue
+    return pd.NaT  # fallback if nothing matches
+
+   df['message_date'] = df['message_date'].apply(parse_date)
    df.rename(columns={'message_date':'date'}, inplace =True)
    users=[]
    messages=[]
